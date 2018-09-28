@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div id="dropin-container"></div>
+  <button id="submit-button" type="button" class="btn btn-success">Pay $1.00</button>
+  <script>
+      var button = document.querySelector('#submit-button');
+
+      braintree.dropin.create({
+        authorization: 'sandbox_m2n9y59h_h35czfgn8w6bq2mc',
+        container: '#dropin-container'
+      }, function (createErr, instance) {
+        button.addEventListener('click', function () {
+          instance.requestPaymentMethod(function (requestPaymentMethodErr, payload) {
+            // Submit payload.nonce to your server
+          });
+        });
+      });
+  </script>
+
+{% endblock %}
