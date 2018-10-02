@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block content %}
+
+
+<div id="Header"> 
+  <h3>Plotted Gif</h3>
+  <p>Tell your friends how you really feel by sketching out your vision,
+  and then getting a gif of a plotter making it come to life!
+  </p>
+</div>
+
+<img width="100%" src='{{url_for("static", filename="axi_draw_image.jpg")}}' alt="">
+
+</br>
+</br>
+
+<p>
+Enter your email below (so that we can send you the gif!) and then draw your masterpiece.
+We will queue your creation up and notify you on completion.
+</p>
+  <form method="post">
+  <input id="email" type="input" name="email" placeholder="Email">
+  <button id="submit-button" type="submit" class="btn btn-success">Start drawing!</button>
+  </form>
+</br>
+</br>
+{% endblock %}

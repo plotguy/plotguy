@@ -1,6 +1,8 @@
-from flask import Flask, render_template, flash, request, redirect, url_for
+from flask import Flask, render_template, flash, request, redirect, url_for, session
 from werkzeug.utils import secure_filename
 import os
+import boto3
+import io
 
 
 UPLOAD_FOLDER = 'raw_uploads/'
@@ -30,12 +32,16 @@ def upload_file():
             return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file.save(os.path.join(application.config['UPLOAD_FOLDER'], filename))
-            print(os.path.join(application.config['UPLOAD_FOLDER'], filename))
-            print('the filename is ' + filename)
-            # return redirect(url_for('raw_uploads',
-            #                         filename=filename))
-            return 'success!'
+            # Do not hard code credentials
+            client = boto3.client(
+                's3',
+                # TODO: get aws credentials configured on EBS
+                aws_access_key_id=ACCESS_KEY,
+                aws_secret_access_key=SECRET_KEY
+            )
+            bucket_name = 'plotguydatastore'
+            client.upload_fileobj(file, bucket_name, file.filename)
+
     return '''
     <!doctype html>
     <title>Upload new File</title>
@@ -49,6 +55,49 @@ def upload_file():
 @application.route('/purchase')
 def purchase():
     return render_template('purchase.html')
+
+@application.route('/start', methods=['GET', 'POST'])
+def start():
+    if request.method == 'POST':
+        session['email'] = request.form['email']
+        return redirect(url_for('draw'))
+    return render_template('start.html')
+
+@application.route('/draw', methods=['GET', 'POST'])
+def draw():
+    if request.method == 'POST':
+        s3_client = boto3.client(
+            's3',
+            # TODO: get aws credentials configured on EBS
+            aws_access_key_id=ACCESS_KEY,
+            aws_secret_access_key=SECRET_KEY
+        )
+        bucket_name = 'plotguydatastore'
+        svg_body = request.form['svg_data'].encode('utf-8')
+        key = session['email'].split('@')[0] + '.svg'
+        s3_client.put_object(Body=svg_body, Bucket=bucket_name, Key=key)
+
+        db_client = boto3.client(
+            'dynamodb',
+            # TODO: get aws credentials configured on EBS
+            aws_access_key_id=ACCESS_KEY,
+            aws_secret_access_key=SECRET_KEY,
+            region_name='us-west-1'
+        )
+
+        db_client.put_item(
+            TableName="plotguy_v0",
+            Item={
+                'email': {'S': session['email']},
+                'completed': {'N': '0'},
+                'filepath': {'S': key},
+            }
+        )
+        return render_template('success.html')
+
+        #client.upload_fileobj(file, bucket_name, file.filename)
+    return render_template('draw.html')
+
 
 if __name__ == "__main__":
     # Setting debug to True enables debug output. This line should be
