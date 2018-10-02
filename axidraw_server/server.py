@@ -27,10 +27,10 @@ class Cam:
 		self.camera = Camera()
 
 	def startRecording(self):
-		self.s = Stream(self.camera, file_name = self.file_name)
+		self.stream = Stream(self.camera, file_name = self.file_name)
 
 	def stopRecording(self):
-		self.s.end()
+		self.stream.end()
 		self.camera.end()
 
 	def convertToGif(self):
@@ -57,9 +57,9 @@ def updateDynamo(drawing):
 		Key = {
 			'email': drawing['email'],
 		},
-		UpdateExpression="SET completed= :var1",
+		UpdateExpression="SET completed= :true",
 		ExpressionAttributeValues={
-			':var1': {'N': '1'},
+			':true': {'N': '1'},
 		}
 	)
 
